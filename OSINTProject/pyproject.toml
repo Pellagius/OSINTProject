@@ -1,0 +1,20 @@
+[project]
+name = "osint-intelligence-system"
+version = "0.1.0"
+description = "A specialized OSINT tool for gathering, analyzing, and reporting on publicly available information."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "playwright",
+    "pydantic",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "python-dotenv",
+    "numpy",
+    "pandas",
+    "requests",
+    "scikit-learn",
+    "pydantic-settings",
+]
