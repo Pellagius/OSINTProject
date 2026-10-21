@@ -1,19 +1,12 @@
 from fastapi import FastAPI
 from core.config import settings
 from services.burn_service import burn_subject_data
-from scraping.engine import ScrapingEngine
 from services.analysis_service import analyzer
-from pydantic import BaseModel
-from typing import List, Optional
+from api.models import SearchRequest
 
 app = FastAPI(title="OSINT Intelligence System")
 
-class SearchRequest(BaseModel):
-    subject_name: str
-    location: str
-    occupation: Optional[str] = None
-    associates: Optional[List[str]] = None
-    interests: Optional[List[str]] = None
+
 
 @app.post("/search")
 async def search(request: SearchRequest):

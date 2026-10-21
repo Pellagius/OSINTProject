@@ -1,98 +1,34 @@
-This project is an OSINT Intelligence System designed to collect, analyze, and report on publicly available information regarding individuals and organizations, with an initial focus on a specific local region (Brisbane).
+# Project Overview: OSINT Intelligence System
 
-Here is my understanding of the project based on the files and structure:
+## 1. Core Purpose & Workflow
+The system is an intelligence pipeline designed to collect, analyze, and report on publicly available information regarding individuals and organizations (initially focused on the Brisbane region). The workflow follows a three-stage process:
 
-1. Core Purpose & Workflow
+*   **Gathering**: A scraping engine utilizing Playwright captures raw data from various web sources.
+*   **Processing**: Raw content is cleaned of HTML noise before being passed to an LLM (via Ollama) for targeted analysis.
+*   **Reporting**: The system structures the final output into formal, actionable intelligence reports.
 
-The system acts as an intelligence pipeline that:
+## 2. Technical Architecture & Components
+The project leverages a modular architecture designed for scalability and security:
 
-Gathers: Uses a scraping engine (Playwright) to collect raw data from the web.
-Processes: Cleans the raw data (removing HTML noise) before passing it to a local Large Language Model (Ollama) for analysis.
-Reports: Structures the LLM output into formal reports.
-Manages: Provides a "Burn" mechanism to isolate and delete session-specific data, ensuring that data from different investigations remains separated.
+- **Backend Layer (`backend/`)**: Built with FastAPI; manages API routes and core application logic.
+- **Intelligence Engine (LLM)**: Utilizes local LLMs via Ollama to process data privately on Windows hardware, ensuring sensitive information remains internal.
+- **Scraping & Discovery Module (`scraping/`)**: Employs Playwright for navigating complex web structures while implementing "human-like" behavior and rotation of identifiers to bypass anti-bot measures.
+- **Data Management Layer (`database/`)**: Utilizes SQLAlchemy for structured storage, ensuring data integrity across different investigation threads.
+- **Security & Connectivity**: Integrated with Tailscale for secure remote access; includes a "Burn" mechanism to isolate session data—ensuring that information from one case never leaks into another.
 
-2. Technical Architecture
+## 3. Core Features and Design Choices
+*   **Multi-Stage Discovery (Search > Filter > Extract)**: Instead of direct scraping, the system employs an intelligent discovery phase where search results are filtered by logic/LLM to identify high-value targets before deep extraction occurs.
+*   **Geo-fencing**: Logic is prioritized for local and regional data relevance.
+*   **Privacy & Safety**: By utilizing locally hosted models (Ollama), sensitive information remains within the user's infrastructure during analysis.
 
-Backend: Built with FastAPI (in backend/), providing the core API logic.
-Intelligence/AI: Utilizes local LLMs via Ollama to process data privately on a Windows machine.
-Scraping Layer: Uses Playwright (in scraping/) with features like User-Agent rotation and "human-like" behavior to bypass anti-bot measures.
-Data Management: Uses SQLAlchemy for a structured database (in database/).
-Network: Integrated with Tailscale for secure remote access.
+## 4. Project Structure Overview
+The project follows a modular structure to separate concerns:
+- `backend/`: Core API logic and routes.
+- `core/`: Configuration, settings, and shared modules.
+- `scraping/`: Playwright implementation for navigation and data extraction.
+- `services/`: High-level business logic (e.g., the "Burn" functionality).
+- `database/`: SQLAlchemy models and schema definitions.
+- `utils/`: Common helper functions across all projects.
 
-3. Key Features & Design Choices
-
-Geo-fencing: Prioritizes local, state, and federal data for the target region.
-Data Integrity: Uses a "Query-First" architecture to keep search parameters and results distinct.
-Privacy/Safety: Employs local LLMs to process sensitive information and includes a "Burn" feature for secure data disposal.
-Frontend: Planned for native iOS and macOS applications.
-
-4. Project Structure Overview
-
-backend/: API routes and core application logic.
-core/: Configuration, settings, and shared logic.
-scraping/: Logic for navigating and extracting data from the web.
-services/: Business logic, including the "burn" functionality.
-utils/: Helper functions used across the project.
-database/: Database models and schema definitions.
-
-______________________________________________________________________________________________________________________________
-
-## Appendage
-
-Scraping Notes
-
-Ok, this i where im not familiar with Playwirght or how web scraping works
-
-In my head you have some strings - name, location, occupations, other query items - and the scraper needs to use those to begin searches.
-
-These searches are the things i have no experience with, I can see the #sym:fetch_page_content function is deisgned to accept a URL string - but that then sounds the function just wants to load a web page straight away an scrape the data from it
-
-I think there is some prelimary work that needs to be done first, and I think the scraper needs to be complexify slighty. I think it should be making generic searches using browsers or other mechanism - then when it discovers URLs that possibly relate to the subject the scraped can THEN start to load and scrape specific websites.
-
-The job of the scraper needs to be reasonably intelligent here - i want it to:
-
-peform preliminary searches to find more data sources(URLs for emample) that could be potentially be of a higher resolution of data about the subject
-Once that prelimary compilation is done, then perform more refined scraping of those sources
-The scraping engine (or possibly via consultation mid process with the LLM) needs to perform step 1 - then with the results of that, perform scrapes of potentially higher resolution data on the subject
-
-10:03 AM
-Your observation is spot on. At the moment, fetch_page_content is a low-level "mechanical" function: it takes a specific URL and grabs the text. To move from a "user query" (e.g., "Find info on John Doe in Brisbane") to "meaningful data," we need an orchestration layer between the backend and the ScrapingEngine.
-
-To address your requirements for a more "intelligent" and multi-stage process, we should evolve the system with the following architecture:
-
-1. The "Discovery" Phase (Step 1)
-Instead of jumping straight to scraping a page, we introduce a Discovery step.
-
-Input: The SearchRequest (name, location, etc.).
-Process: The ScrapingEngine (or a new DiscoveryService) performs a broad search (e.g., via a search engine API or by navigating to search results pages).
-The "Intelligence" Component: This is where the LLM (via analyzer) becomes crucial. Instead of just gathering every link, the LLM can analyze the search results to identify "High-Value" links—those that are likely to contain the specific types of information (social media, legal records, etc.) that we want.
-2. The "Extraction" Phase (Step 2)
-Once we have a list of "high-value" URLs:
-
-Process: The ScrapingEngine then performs the "refined scraping" you mentioned. It visits these specific pages, handles the navigation, and extracts the raw content.
-Outcome: This results in a high-quality, filtered dataset.
-3. The "Analysis" Phase
-Finally, this rich, multi-sourced data is passed to the analyzer to produce the final report.
-
-Proposed Implementation Plan:
-I suggest we refine the code in the following stages:
-
-Refine ScrapingEngine: Add a method for Search/Discovery. Instead of just fetch_page_content(url), we'll have a method that handles the logic of "Search 
-→
-→ Filter 
-→
-→ Identify URLs."
-Introduce a "Coordinator" or "Pipeline": We can update main.py or a new manager class to orchestrate this flow.
-Route: search 
-→
-→ Discovery Step (Search + LLM Filtering) 
-→
-→ Extraction Step (Iterative Scraping) 
-→
-→ Analysis Step (LLM Summary).
-Refine the "Intelligence": We will use the analyzer not just for the final report, but as a "decision-making" tool during the discovery phase to decide which links are worth a "deep dive."
-Does this "Discovery 
-→
-→ Filter 
-→
-→ Extract" approach align with what you had in mind for the "intelligent" scraper? If so, I can begin by expanding the ScrapingEngine to handle this multi-step logic.
+--- 
+*Last Updated: 2026-10-21*
