@@ -1,5 +1,3 @@
-# OSINTProject/scraping/scrapingCoordinator.py
-
 import asyncio
 import logging
 from api.models import SearchRequest
@@ -17,7 +15,6 @@ class ScrapingCoordinator:
         self._session_manager = SessionManager(max_pages=max_concurrent_extractions)
 
     async def process_discovery_results(self, request: SearchRequest) -> List[Dict]:
-        # 1. Discovery Phase (Gathering candidates)
 	discoverer = DiscoveryEngine(session_mgr)
         all_results = []
         
@@ -25,11 +22,9 @@ class ScrapingCoordinator:
         found = await discoverer.discover_sources(request)
         all_results.extend(found)
 
-        # Deduplicate results (though discoveryEngine should already handle this based on our previous discussion).
         unique_items = [res for res in all_results if 'url' in res] 
         logger.info(f"Discovered {len(unique_items)} unique candidates to process.") 
 
-        # 2. Extraction Phase (Getting content from the discovered URLs)
         extractor = ExtractionEngine(session_mgr)
         processed_results = []
    
