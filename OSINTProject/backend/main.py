@@ -3,18 +3,9 @@ from core.config import settings
 from services.burn_service import burn_subject_data
 from services.analysis_service import analyzer
 from api.models import SearchRequest
-from core.dependencyGraph import DependencyGraph
 
 app = FastAPI(title="OSINT Intelligence System")
 
-dependency_graph = DependencyGraph()
-
-async def startup():
-    await dependency_graph.initialize()
-
-async def shutdown():
-    print("Shutting down DependencyGraph...")
-    await dependency_graph.shutdown()
 
 @app.post("/search")
 async def search(request: SearchRequest):
