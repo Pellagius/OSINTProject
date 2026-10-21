@@ -2,6 +2,7 @@ fastapi
 uvicorn
 playwright
 pydantic
+pydantic-settings
 sqlalchemy
 psycopg2-binary
 python-dotenv
@@ -9,5 +10,3 @@ numpy
 pandas
 requests
 scikit-learn
-```
-Note: Add specific intelligence/scraping packages as needed.
