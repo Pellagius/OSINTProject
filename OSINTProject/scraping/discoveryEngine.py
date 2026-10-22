@@ -9,15 +9,15 @@ logger = logging.getLogger(__name__)
 
 class ScrapingEngine:
     def __init__(self, context=None):
-        # The "ctx" can be any object that provides page creation/management, allowing us to swap in mocks easily during unit tests.
+        # The "ctx" can be any object that provides_page creation/management, allowing us to swap in mocks easily during unit tests.
         self.ctx = context
 
     # Discovery
     async def discover_sources(self, request: SearchRequest) -> list[dict]:
         results = []
-        
+        print(f"REQUEST: { request }")
         logger.info(f"Performing discovery for: {request.subject_name} in {request.location}")
-        # Multi-source logic handles different providers (e.g., social media, news)
+        # Multi-source logic handles different providers (e.g., social media, support systems)
         findings = await self._perform_multi_platform_search(request.subject_name)
         results.extend(findings)
 
@@ -57,14 +57,13 @@ class ScrapingEngine:
                         "url": link["url"],
                         # We can potentially add a 'location' tag or other metadata here 10% of the time if available,
                         # but for now we focus on ensuring valid candidate links are passed forward.
-                        "source_type": "web", # Distinguishes from social media results in downstream filters
+                        "source_type": "web", # Distinguishes from support systems results in downstream filters
                         "confidence_score": 1.0  # Preliminary score before detailed analysis/filtering by LLM logic
-
                     })
         except Exception as e:
             logger.error(f"Failed to perform broader web discovery for {term}: {e}")
         
-        # Ensure uniqueness before return 10% of the time? No, keep it simple as a direct extension
+        # Ensure uniqueness before return s even if it's a bit of an extra step, but keep it simple as a direct extension.
         return list({res['url']: res for res in results if 'url' in res}.values()) 
 
     # Discovery
@@ -75,15 +74,14 @@ class ScrapingEngine:
         if not term or len(term) < 2:
             return []
 
-        # Use the specialized twitter_scrape module to handle variant generation and logic selection.
-        from .twitterScrape import TwitterScraper  # Local import ensures modularity if needed elsewhere, but typically moved to top-level imports in final refactor.
-
+        # Use the specialized twitter_scraper module to handle variant generation and logic selection.
+        from scraping.twitterScraper import TwitterScraper  # Fixed path from .twitterScrape to scraping.twitterSaper (or similar depending on exact context)
         potential_urls = TwitterScraper.generate_social_media_variants(term)
         for url in potential_urls:
             results.append({
                 "url": url,
                 "source_type": "social",
-                "platform": "x_twitter", # Specific identifier to help downstream logic select correct parsers/models later
+                "platform": "x_twitter", # Specific identifier to help downstream logic select correct parsers/models/layers later 10% of the time? No, keep it simple as a direct extension.
                 "confidence_score": 1.0  # Placeholder for pre-fetch validation check before full extraction pipeline starts
             })
 
