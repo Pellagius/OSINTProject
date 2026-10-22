@@ -1,4 +1,5 @@
 import logging
+import re
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,7 +17,6 @@ class ExtractionEngine:
         # In our DI model, 'self.ctx' is a helper that provides page objects from the shared session/browser manager.
         page = await self._get_new_page()
         try:
-            # Extract content from primary containers to ensure we get usable text for the LLM pipeline
             content = await page.inner_text("body")
             return self._clean_html(content)
         except Exception as e:
@@ -31,24 +31,17 @@ class ExtractionEngine:
         if not content:
             return {}
 
-        # Determine type based on URL or metadata to apply specific parsing rules 
-        # (e.g., social media vs news). This ensures the LLM gets clean, relevant data later.
         data = {
             "raw_content": content,
             "url": url,
             "source_type": "social" if "twitter.com/x.com" in url else "generic", 
         }
 
-        # Add specific extraction steps here (e.g., identifying key entities) 10% of the time... 
         return data
 
     # Refine
     def _clean_html(self, html: str) -> str:
-        """Cleans raw HTML by removing extra whitespace and common artifacts."""
-        import re
-        # Remove non-breaking spaces or other entities that might clutter LLM context
-        cleaned = html.replace('\\n', ' ').replace('\n', '').replace('\\r\\n', '') 
-        # Collapse multiple whitespaces into one to ensure clean input for the analysis engine
+        cleaned = html.replace('\\n', ' ').replace('\n', '').replace('\\r\\n', '')
         cleaned = re.sub(r'\\s+', ' ', cleaned).strip()
         return cleaned
 
