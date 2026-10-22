@@ -2,12 +2,7 @@ import asyncio
 import logging
 from api.models import SearchRequest
 from typing import List, Dict
-from discoveryEngine import ScrapingEngine
-
-try:
-    from extractionEngine import ExtractionEngine
-except ImportError:
-    from extractionEngine import ExtractionEngine
+from scraping.discoveryEngine import ScrapingEngine
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

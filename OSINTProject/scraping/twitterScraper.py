@@ -6,17 +6,13 @@ class TwitterScraper:
 
     @staticmethod
     def generate_social_media_variants(term: str) -> list[str]:
-        """
-        Generates a set of potential social media URLs based on common naming conventions 
-        to ensure high recall across different naming conventions.
-        """
         if not term or len(term) < 2:
             return []
 
         # Basic cleaning and variations for Twitter/X handle logic
         base_clean = "".join(c for c in term if c.isalnum()).lower() # e.g., "Joe Bloggs" -> "joebloggs"
-        underscore_variant = term.replace(" ", "_").replace("-", "_")  # e.g., "Joe Bloggs" -> "joe_blogs"
-
+        underscore_variant = term.replace(" ", "_").replace("-", "_").lower()  # e.g., "Joe Bloggs" -> "joe_bloggs"
+       
         potential_urls = set()
         if base_clean: 
             potential_urls.add(f"https://twitter.com/{base_clean}")
@@ -35,7 +31,7 @@ class TwitterScraper:
              # Adding a variant that joins the first part with only the last character of second word/part if it exists (e.g., joed)
             full_first = parts[0].lower()
             try:
-                last_init = parts[-1][0] # This is safe because we checked len(parts)>=2 and filters out empty strings above
+                last_init = parts[-1][0].lower() # This is safe because we checked len(parts)>=2 and filters out empty strings above
                 potential_urls.add(f"https://twitter.com/{full_first}{last_init}")
             except IndexError: 
                  pass
