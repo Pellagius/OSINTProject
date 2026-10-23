@@ -39,7 +39,8 @@ class ExtractionEngine:
 
     # Refine
     def _clean_html(self, html: str) -> str:
-        cleaned = html.replace('\\n', ' ').replace('\n', '').replace('\\r\\n', '')
-        cleaned = re.sub(r'\\s+', ' ', cleaned).strip()
-        return cleaned
+        cleaned = html.replace('\\n', ' ').replace('\\n', '').replace('\\r\\n', '')
+        cleaned = re.sub(r'<[^<]+?>', '', cleaned) 
+        cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+        return cleaned	
 
