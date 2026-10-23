@@ -1,3 +1,5 @@
+# OSINTProject/scraping/scrapingCoordinator.py
+
 import asyncio
 import logging
 from api.models import SearchRequest
@@ -16,8 +18,7 @@ class ScrapingCoordinator:
 
     async def process_discovery_results(self, request: SearchRequest) -> List[Dict]:
         # 1. Discovery Phase (Gathering candidates)
-
-        discoverer = DiscoveryEngine(session_mgr)
+	discoverer = DiscoveryEngine(session_mgr)
         all_results = []
         
         logger.info(f"Executing discovery phase for terms related to: {request.subject_name}")

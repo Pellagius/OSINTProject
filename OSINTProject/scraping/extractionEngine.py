@@ -10,7 +10,7 @@ class ExtractionEngine:
 
     async def fetch_page_content(self, url: str) -> str:
         if not self.session_manager:
-            logger.error("No playwright session manager available for fetch_page_content")
+(??)        logger.error("No Playwright context available for fetch_page_content")
             return ""
 
         page = await self.session_manager.get_new_page()
