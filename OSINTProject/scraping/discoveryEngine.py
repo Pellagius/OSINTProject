@@ -1,17 +1,19 @@
+# OSINTProject/scraping/discoveryEngine.py
+
 import asyncio
 from playwright.async_api import async_playwright
 from core.config import settings
 from api.models import SearchRequest
 import logging
+from core.session_manager import SessionManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class ScrapingEngine:
-    def __init__(self, context=None):
-        self.ctx = context
+class DiscoveryEngine:
+    def __init__(self, session_manager: SessionManager):
+        self._session_manager = session_manager
 
-    # Discovery
     async def discover_sources(self, request: SearchRequest) -> list[dict]:
         results = []
         
@@ -24,7 +26,6 @@ class ScrapingEngine:
         unique_results = {res['url']: res for res in results if 'url' in res}.values()
         return list(unique_results) 
 
-    # Discovery
     async def _perform_multi_platform_search(self, term: str) -> list[dict]:
         results = []
 
@@ -41,13 +42,9 @@ class ScrapingEngine:
     async def _perform_general_web_discovery(self, term: str) -> list[dict]:
         logger.info(f"Performing broader web discovery for terms related to: {term}")
 
-        # In this phase, we are looking for ~5-10 high-quality results from broad search filters.
-        # We filter out "sponsored" items early in the pipeline if they appear as such on result pages.
         results = []
         try:
-            # Logic here will interact with a list of potential web source providers 
-            # (e.g., Google, Bing) to fetch results that are not marked as sponsored/ads.
-            raw_links = await self._fetch_serp_data(term) # Placeholder for the actual SERP logic call
+            raw_links = await self._fetch_serp_data(term) 
 
             for link in raw_links:
                 if "sponsored" not in link['title'].lower() and "ad" not in link['url'].lower():
@@ -58,10 +55,26 @@ class ScrapingEngine:
                     })
         except Exception as e:
             logger.error(f"Failed to perform broader web discovery for {term}: {e}")
-        
-        return list({res['url']: res for res in results if 'url' in res}.values()) 
 
-    # Discovery
+        return list({res['url']: res for res in results if 'url' in res}.values())
+
+    async def _fetch_serp_data(self, term: str) -> list[dict]:
+        logger.info(f"Fetching SERP data for term: {term}")
+        page = await self._session_manager.get_new_page()
+        try:
+            await page.goto(f"https://www.google.com/search?q={term}")
+            
+            await page.wait_for_selector("div.g")
+
+            results = await page.eval_on_selector_all("div.g", "elements => elements.map(el => ({url: el.querySelector('a')?.href || '', title: el.querySelector('h3')?.innerText || ''}))")
+            
+            return results
+        except Exception as e:
+            logger.error(f"Failed to fetch SERP data for {term}: {e}")
+            return []
+        finally:
+            await page.close()
+
     async def _discover_social_media(self, term: str) -> list[dict]:
         logger.info(f"Searching specifically across social media platform types for: {term}")
         results = []
@@ -76,21 +89,18 @@ class ScrapingEngine:
             results.append({
                 "url": url,
                 "source_type": "social",
-                "platform": "x_twitter", 
-                "confidence_score": 1.0 
+                "platform": "x_twitter",
+                "confidence_score": 1.0
             })
 
         return results
 
-    # Discovery
     def _filter_high_value(self, results: list) -> list:
         filtered = []
         for item in results:
             if not item.get('url'): 
                 continue
 
-            # In a full implementation, this would involve checking against common noise patterns (e.g., login pages)
-            # or using an LLM to determine if the content is relevant based on search_terms context.
             is_valid = True 
             if "login" in item['url'].lower() or "signup" in item['url'].lower():
                 is_valid = False
@@ -98,3 +108,7 @@ class ScrapingEngine:
             if is_valid:
                 filtered.append(item)
         return filtered
+
+
+
+

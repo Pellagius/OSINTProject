@@ -3,31 +3,48 @@ from core.config import settings
 from services.burn_service import burn_subject_data
 from services.analysis_service import analyzer
 from api.models import SearchRequest
+from core.dependencyGraph import DependencyGraph
 
 app = FastAPI(title="OSINT Intelligence System")
 
+dependency_graph = DependencyGraph()
 
+async def startup():
+    await dependency_graph.initialize()
+
+async def shutdown():
+    print("Shutting down DependencyGraph...")
+    await dependency_graph.shutdown()
 
 @app.post("/search")
 async def search(request: SearchRequest):
-    # The search logic will be implemented here, 
-    # utilizing ScrapingEngine and the analyzer.
-    # For now, we will simulate the link between the request and the engine.
-    # In a full implementation, we would use a mapping service to turn 
-    # search criteria into a list of URLs to scrape.
+    discovery_engine = dependency_graph.get_discovery_engine()
+    extraction_engine = dependency_graph.get_extraction_engine()
+
+    # Discover
+    try:
+        discovery_results = await discovery_engine.discover_sources(request)
+
+    except Exception as e:
+         return {"status": "error", "message": f"Discovery failed for {request.subject_name}: {str(e)}"}
+
+    # Extract
+    extracted_data = []
+    for url in discovery_results.get("urls", []): 
+        page_content = await extraction_engine.extract_detailed_data(url)
+        extracted_data.append({
+            "source": url,
+            "raw_text": page_content
+        })
     
-    # Example of how the integration will flow:
-    # 1. Determine URLs based on request.subject_name and request.location
-    # 2. Pass URLs to ScrapingEngine
-    # 3. Pass resulting text to analyzer
+    # Analyse
+    # TODO: Anaylse extracted_data
     
-    # For this step, we are making the link between the request and the processing pipeline.
-    result = {
+    return {
         "status": "success",
-        "message": f"Processing search for {request.subject_name} in {request.location}",
-        "data": request.model_dump()
+        "data": "analysed data repsonse object" 
+
     }
-    return result
 
 @app.post("/burn/{subject_id}")
 async def burn_subject(subject_id: int):
@@ -35,3 +52,7 @@ async def burn_subject(subject_id: int):
     if success:
         return {"message": f"Successfully burned all data for subject {subject_id}"}
     return {"error": "Failed to burn data"}
+
+
+app.add_event_handler("startup", startup)
+app.add_event_handler("shutdown", shutdown)

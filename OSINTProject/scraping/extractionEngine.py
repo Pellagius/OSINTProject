@@ -1,3 +1,5 @@
+# OSINTProject/scraping/extractionEngine.py
+
 import logging
 import re
 
@@ -5,17 +7,17 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ExtractionEngine:
-    def __init__(self, context=None):
-        # The "ctx" can be any object that provides page creation/management, allowing us to swap in mocks easily during unit tests.
-        self.ctx = context
+    def __init__(self, session_manager):
+        # Use dependency injection to pass the session manager
+        self.session_manager = session_manager
 
     async def fetch_page_content(self, url: str) -> str:
-        if not self.ctx:
-            logger.error("No Playwright context available for fetch_page_content")
+        if not self.session_manager:
+            logger.error("No Playwright session manager available for fetch_page_content")
             return ""
 
-        # In our DI model, 'self.ctx' is a helper that provides page objects from the shared session/browser manager.
-        page = await self._get_new_page()
+        # Get a new page from the session manager
+        page = await self.session_manager.get_new_page()
         try:
             content = await page.inner_text("body")
             return self._clean_html(content)
@@ -45,7 +47,3 @@ class ExtractionEngine:
         cleaned = re.sub(r'\\s+', ' ', cleaned).strip()
         return cleaned
 
-    async def _get_new_page(self) -> object:
-         """Helper method used by fetch_page_content; logic depends on your specific session manager."""
-         # This will be implemented based on how you manage the Playwright page lifecycle.
-         pass
