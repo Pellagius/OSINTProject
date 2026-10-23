@@ -9,15 +9,12 @@ logger = logging.getLogger(__name__)
 
 class ScrapingEngine:
     def __init__(self, context=None):
-        # The "ctx" can be any object that provides_page creation/management, allowing us to swap in mocks easily during unit tests.
         self.ctx = context
 
     # Discovery
     async def discover_sources(self, request: SearchRequest) -> list[dict]:
         results = []
-        print(f"REQUEST: { request }")
         logger.info(f"Performing discovery for: {request.subject_name} in {request.location}")
-        # Multi-source logic handles different providers (e.g., social media, support systems)
         findings = await self._perform_multi_platform_search(request.subject_name)
         results.extend(findings)
 
@@ -63,7 +60,6 @@ class ScrapingEngine:
         except Exception as e:
             logger.error(f"Failed to perform broader web discovery for {term}: {e}")
         
-        # Ensure uniqueness before return s even if it's a bit of an extra step, but keep it simple as a direct extension.
         return list({res['url']: res for res in results if 'url' in res}.values()) 
 
     # Discovery
