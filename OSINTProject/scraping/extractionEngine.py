@@ -10,7 +10,7 @@ class ExtractionEngine:
 
     async def fetch_page_content(self, url: str) -> str:
         if not self.session_manager:
-        logger.error("No Playwright context available for fetch_page_content")
+            logger.error("No Playwright context available for fetch_page_content")
             return ""
 
         page = await self.session_manager.get_new_page()
@@ -39,7 +39,7 @@ class ExtractionEngine:
 
     # Refine
     def _clean_html(self, html: str) -> str:
-        cleaned = html.replace('\\n', ' ').replace('\n', '').replace('\\r\\n', '') 
+        cleaned = html.replace('\\n', ' ').replace('\n', '').replace('\\r\\n', '')
         cleaned = re.sub(r'\\s+', ' ', cleaned).strip()
         return cleaned
 
