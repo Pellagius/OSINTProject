@@ -15,9 +15,7 @@ class ScrapingCoordinator:
         self._session_manager = SessionManager(max_pages=max_concurrent_extractions)
 
     async def process_discovery_results(self, request: SearchRequest) -> List[Dict]:
-        # 1. Discovery Phase (Gathering candidates)
-
-        discoverer = DiscoveryEngine(session_mgr)
+	discoverer = DiscoveryEngine(session_mgr)
         all_results = []
         
         logger.info(f"Executing discovery phase for terms related to: {request.subject_name}")

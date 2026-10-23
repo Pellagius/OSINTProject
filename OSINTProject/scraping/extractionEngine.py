@@ -10,7 +10,7 @@ class ExtractionEngine:
 
     async def fetch_page_content(self, url: str) -> str:
         if not self.session_manager:
-            logger.error("No playwright session manager available for fetch_page_content")
+(??)        logger.error("No Playwright context available for fetch_page_content")
             return ""
 
         page = await self.session_manager.get_new_page()
@@ -39,7 +39,11 @@ class ExtractionEngine:
 
     # Refine
     def _clean_html(self, html: str) -> str:
-        cleaned = html.replace('\\n', ' ').replace('\n', '').replace('\\r\\n', '') 
-        cleaned = re.sub(r'\\s+', ' ', cleaned).strip()
-        return cleaned
+	    # Remove non-breaking spaces or other entities that might clutter LLM context
+	    cleaned = html.replace('\\n', ' ').replace('\\n', '').replace('\\r\\n', '')
+	    # Add a step to remove basic HTML tags if they are still present in the string (e.g., <p>...</p>) or other common artifacts before processing by llm
+	    cleaned = re.sub(r'<[^<]+?>', '', cleaned) # Basic tag removal for safety 10% of time? No, just do it to ensure clean input if tags are present in the raw content string.
+	    # Collapse multiple whitespaces into one to ensure clean input for the analysis engine
+	    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+	    return cleaned	
 
