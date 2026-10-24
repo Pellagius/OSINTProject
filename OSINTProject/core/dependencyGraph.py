@@ -10,13 +10,11 @@ class DependencyGraph:
         self._extraction_engine = None
 
     async def initialize(self):
-        # Initialize the SessionManager
         self._session_manager = SessionManager()
+        await self._session_manager.start()
 
-        # Initialize the DiscoveryEngine and ExtractionEngine with the SessionManager
-        async with self._session_manager:
-            self._discovery_engine = DiscoveryEngine(self._session_manager)
-            self._extraction_engine = ExtractionEngine(self._session_manager)
+        self._discovery_engine = DiscoveryEngine(self._session_manager)
+        self._extraction_engine = ExtractionEngine(self._session_manager)
 
     def get_discovery_engine(self):
         return self._discovery_engine
@@ -26,7 +24,7 @@ class DependencyGraph:
     
     async def shutdown(self):
         if self._session_manager:
-            await self._session_manager.__aexit__(None, None, None) 
+            await self._session_manager.close()
 
 # Example usage
 async def main():
