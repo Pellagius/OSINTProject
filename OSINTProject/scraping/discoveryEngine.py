@@ -3,21 +3,18 @@ from playwright.async_api import async_playwright
 from core.config import settings
 from api.models import SearchRequest
 import logging
+from core.session_manager import SessionManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class ScrapingEngine:
-    def __init__(self, context=None):
-        # The "ctx" can be any object that provides_page creation/management, allowing us to swap in mocks easily during unit tests.
-        self.ctx = context
+class DiscoveryEngine:
+    def __init__(self, session_manager: SessionManager):
+        self._session_manager = session_manager
 
-    # Discovery
     async def discover_sources(self, request: SearchRequest) -> list[dict]:
         results = []
-        print(f"REQUEST: { request }")
         logger.info(f"Performing discovery for: {request.subject_name} in {request.location}")
-        # Multi-source logic handles different providers (e.g., social media, support systems)
         findings = await self._perform_multi_platform_search(request.subject_name)
         results.extend(findings)
 
@@ -26,7 +23,6 @@ class ScrapingEngine:
         unique_results = {res['url']: res for res in results if 'url' in res}.values()
         return list(unique_results) 
 
-    # Discovery
     async def _perform_multi_platform_search(self, term: str) -> list[dict]:
         results = []
 
@@ -43,30 +39,39 @@ class ScrapingEngine:
     async def _perform_general_web_discovery(self, term: str) -> list[dict]:
         logger.info(f"Performing broader web discovery for terms related to: {term}")
 
-        # In this phase, we are looking for ~5-10 high-quality results from broad search filters.
-        # We filter out "sponsored" items early in the pipeline if they appear as such on result pages.
         results = []
         try:
-            # Logic here will interact with a list of potential web source providers 
-            # (e.g., Google, Bing) to fetch results that are not marked as sponsored/ads.
-            raw_links = await self._fetch_serp_data(term) # Placeholder for the actual SERP logic call
+            raw_links = await self._fetch_serp_data(term) 
 
             for link in raw_links:
                 if "sponsored" not in link['title'].lower() and "ad" not in link['url'].lower():
                     results.append({
                         "url": link["url"],
-                        # We can potentially add a 'location' tag or other metadata here 10% of the time if available,
-                        # but for now we focus on ensuring valid candidate links are passed forward.
-                        "source_type": "web", # Distinguishes from support systems results in downstream filters
+			"source_type": "web",
                         "confidence_score": 1.0  # Preliminary score before detailed analysis/filtering by LLM logic
                     })
         except Exception as e:
             logger.error(f"Failed to perform broader web discovery for {term}: {e}")
-        
-        # Ensure uniqueness before return s even if it's a bit of an extra step, but keep it simple as a direct extension.
-        return list({res['url']: res for res in results if 'url' in res}.values()) 
 
-    # Discovery
+        return list({res['url']: res for res in results if 'url' in res}.values())
+
+    async def _fetch_serp_data(self, term: str) -> list[dict]:
+        logger.info(f"Fetching SERP data for term: {term}")
+        page = await self._session_manager.get_new_page()
+        try:
+            await page.goto(f"https://www.google.com/search?q={term}")
+            
+            await page.wait_for_selector("div.g")
+
+            results = await page.eval_on_selector_all("div.g", "elements => elements.map(el => ({url: el.querySelector('a')?.href || '', title: el.querySelector('h3')?.innerText || ''}))")
+            
+            return results
+        except Exception as e:
+            logger.error(f"Failed to fetch SERP data for {term}: {e}")
+            return []
+        finally:
+            await page.close()
+
     async def _discover_social_media(self, term: str) -> list[dict]:
         logger.info(f"Searching specifically across social media platform types for: {term}")
         results = []
@@ -74,28 +79,25 @@ class ScrapingEngine:
         if not term or len(term) < 2:
             return []
 
-        # Use the specialized twitter_scraper module to handle variant generation and logic selection.
-        from scraping.twitterScraper import TwitterScraper  # Fixed path from .twitterScrape to scraping.twitterSaper (or similar depending on exact context)
+        from scraping.twitterScraper import TwitterScraper
+
         potential_urls = TwitterScraper.generate_social_media_variants(term)
         for url in potential_urls:
             results.append({
                 "url": url,
                 "source_type": "social",
-                "platform": "x_twitter", # Specific identifier to help downstream logic select correct parsers/models/layers later 10% of the time? No, keep it simple as a direct extension.
-                "confidence_score": 1.0  # Placeholder for pre-fetch validation check before full extraction pipeline starts
+                "platform": "x_twitter",
+                "confidence_score": 1.0
             })
 
         return results
 
-    # Discovery
     def _filter_high_value(self, results: list) -> list:
         filtered = []
         for item in results:
             if not item.get('url'): 
                 continue
 
-            # In a full implementation, this would involve checking against common noise patterns (e.g., login pages)
-            # or using an LLM to determine if the content is relevant based on search_terms context.
             is_valid = True 
             if "login" in item['url'].lower() or "signup" in item['url'].lower():
                 is_valid = False
