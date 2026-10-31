@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from database.models import Report, Query, Subject
-from database.session import SessionLocal
+from OSINTProject.src.database.models import Report, Query, Subject
+from OSINTProject.src.database.session import SessionLocal
 
 def burn_subject_data(subject_id: int) -> bool:
     """

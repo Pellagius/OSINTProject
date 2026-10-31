@@ -1,26 +1,29 @@
 import re
 
 class TwitterScraper:
+
     def __init__(self):
         pass
 
-    @staticmethod
-    def generate_social_media_variants(term: str) -> list[str]:
+    def generate_social_media_variants(self, term: str) -> list[str]:
+        print("GENERATE SOCIAL MEDIA VARIANTS CALLED")
         if not term or len(term) < 2:
+            print("SEARCH TERM LESS THAN 2 OR NO SEARCH TERM")
             return []
-
+        print("SEARCH TERM LONGER THAN 2")
         # Basic cleaning and variations for Twitter/X handle logic
         base_clean = "".join(c for c in term if c.isalnum()).lower() # e.g., "Joe Bloggs" -> "joebloggs"
         underscore_variant = term.replace(" ", "_").replace("-", "_").lower()  # e.g., "Joe Bloggs" -> "joe_bloggs"
        
         potential_urls = set()
+        print(f"BASE CLEAN: { base_clean }")
         if base_clean: 
             potential_urls.add(f"https://twitter.com/{base_clean}")
         if underscore_variant and underscore_variant != base_clean: 
             potential_urls.add(f"https://twitter.com/{underscore_variant}")
 
         # Additional variants for high-recall discovery (e.g., jdoe, joed)
-        parts = [p for p in re.split(r'[\s_-]', term) if p]
+        parts = [p for p in re.split(r'[-_\s]', term) if p]
         if len(parts) >= 2:
             first_init = parts[0][0].lower()
             last_name = parts[-1].lower()
@@ -38,10 +41,9 @@ class TwitterScraper:
 
         return list(potential_urls)
 
-    @staticmethod
-    def identify_source_type(url: str) -> str:
+    def identify_source_type(self, url: str) -> str:
         """Determines the type of content based on its URL structure."""
-        if "twitter.com/x.com" in url or "twitter.com/" in url: 
+        if "twitter.com" in url:
             return "social"
         return "generic"
 
