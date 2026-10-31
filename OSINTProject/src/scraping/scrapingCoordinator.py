@@ -1,37 +1,33 @@
 import asyncio
 import logging
-from api.models import SearchRequest
+from OSINTProject.src.api.models import SearchRequest
 from typing import List, Dict
-from scraping.discoveryEngine import DiscoveryEngine
-from scraping.extractionEngine import ExtractionEngine
-from core.session_manager import SessionManager
+from OSINTProject.src.scraping.discoveryEngine import DiscoveryEngine
+from OSINTProject.src.scraping.extractionEngine import ExtractionEngine
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ScrapingCoordinator:
-    def __init__(self, max_concurrent_extractions: int = 5):
+    def __init__(self, discoveryEngine: DiscoveryEngine, extractionEngine: ExtractionEngine, max_concurrent_extractions: int = 5):
         self._semaphore = asyncio.Semaphore(max_concurrent_extractions)
-        self._session_manager = SessionManager(max_pages=max_concurrent_extractions)
+        self._discovery_engine = discoveryEngine
+        self._extraction_engine = extractionEngine
 
-    async def process_discovery_results(self, request: SearchRequest) -> List[Dict]:
-	discoverer = DiscoveryEngine(session_mgr)
+    async def scrape(self, request: SearchRequest) -> List[Dict]:
         all_results = []
         
         logger.info(f"Executing discovery phase for terms related to: {request.subject_name}")
-        found = await discoverer.discover_sources(request)
+        found = await self._discovery_engine.discover_sources(request)
         all_results.extend(found)
 
         unique_items = [res for res in all_results if 'url' in res] 
-        logger.info(f"Discovered {len(unique_items)} unique candidates to process.") 
-
-        extractor = ExtractionEngine(session_mgr)
-        processed_results = []
+        logger.info(f"Discovered {len(unique_items)} unique candidates to process.")
    
         async def _wrapped_extraction(item):
             async with self._semaphore: # Respect the max concurrent limit (e.g., Playwright pages open at once)
                 try:
-                    result = await extractor.extract_detailed_data(item['url'])
+                    result = await self._extraction_engine.extract_detailed_data(item['url'])
                     if result and 'raw_content' in result:  # Only add if extraction was successful
                         return result
                 except Exception as e:
@@ -44,5 +40,4 @@ class ScrapingCoordinator:
 
         logger.info(f"Successfully processed {len(processed_results)} items.")
         return processed_results
-
 

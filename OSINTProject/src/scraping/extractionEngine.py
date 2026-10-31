@@ -1,11 +1,12 @@
 import logging
-import re
+from OSINTProject.src.utils import filters
+from OSINTProject.src.core.session_manager import SessionManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ExtractionEngine:
-    def __init__(self, session_manager):
+    def __init__(self, session_manager: SessionManager):
         self.session_manager = session_manager
 
     async def fetch_page_content(self, url: str) -> str:
@@ -13,10 +14,11 @@ class ExtractionEngine:
             logger.error("No Playwright context available for fetch_page_content")
             return ""
 
-        page = await self.session_manager.get_new_page()
+        page = await self.session_manager.get_new_context()
+
         try:
             content = await page.inner_text("body")
-            return self._clean_html(content)
+            return filters.clean_html(content)
         except Exception as e:
             logger.error(f"Failed to fetch content from {url}: {e}")
             return ""
@@ -32,15 +34,8 @@ class ExtractionEngine:
         data = {
             "raw_content": content,
             "url": url,
-            "source_type": "social" if "twitter.com/x.com" in url else "generic", 
+            "source_type": "social" if "twitter.com" in url else "generic",
         }
 
         return data
-
-    # Refine
-    def _clean_html(self, html: str) -> str:
-        cleaned = html.replace('\\n', ' ').replace('\\n', '').replace('\\r\\n', '')
-        cleaned = re.sub(r'<[^<]+?>', '', cleaned) 
-        cleaned = re.sub(r'\s+', ' ', cleaned).strip()
-        return cleaned	
 

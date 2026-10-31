@@ -1,16 +1,16 @@
-import asyncio
-from playwright.async_api import async_playwright
-from core.config import settings
-from api.models import SearchRequest
 import logging
-from core.session_manager import SessionManager
+from OSINTProject.src.api.models import SearchRequest
+from OSINTProject.src.scraping.twitterScraper import TwitterScraper
+from OSINTProject.src.core.session_manager import SessionManager
+from OSINTProject.src.utils import filters
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class DiscoveryEngine:
-    def __init__(self, session_manager: SessionManager):
+    def __init__(self, session_manager: SessionManager, twitter_scraper: TwitterScraper = TwitterScraper()):
         self._session_manager = session_manager
+        self._twitter_scraper = twitter_scraper
 
     async def discover_sources(self, request: SearchRequest) -> list[dict]:
         results = []
@@ -19,7 +19,7 @@ class DiscoveryEngine:
         results.extend(findings)
 
         # Deduplicate and filter high-value targets
-        results = self._filter_high_value(results)
+        results = filters.filter_high_value(results)
         unique_results = {res['url']: res for res in results if 'url' in res}.values()
         return list(unique_results) 
 
@@ -48,7 +48,7 @@ class DiscoveryEngine:
                     results.append({
                         "url": link["url"],
 			"source_type": "web",
-                        "confidence_score": 1.0  # Preliminary score before detailed analysis/filtering by LLM logic
+                        "confidence_score": 1.0  # Preliminary score before detailed analysis/me    ing by LLM logic
                     })
         except Exception as e:
             logger.error(f"Failed to perform broader web discovery for {term}: {e}")
@@ -79,9 +79,7 @@ class DiscoveryEngine:
         if not term or len(term) < 2:
             return []
 
-        from scraping.twitterScraper import TwitterScraper
-
-        potential_urls = TwitterScraper.generate_social_media_variants(term)
+        potential_urls = self._twitter_scraper.generate_social_media_variants(term)
         for url in potential_urls:
             results.append({
                 "url": url,
@@ -91,17 +89,3 @@ class DiscoveryEngine:
             })
 
         return results
-
-    def _filter_high_value(self, results: list) -> list:
-        filtered = []
-        for item in results:
-            if not item.get('url'): 
-                continue
-
-            is_valid = True 
-            if "login" in item['url'].lower() or "signup" in item['url'].lower():
-                is_valid = False
-
-            if is_valid:
-                filtered.append(item)
-        return filtered

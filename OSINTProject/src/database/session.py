@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from core.config import settings
+from OSINTProject.src.core.config import settings
 from .models import Base
 
 # Create the tables in the database
