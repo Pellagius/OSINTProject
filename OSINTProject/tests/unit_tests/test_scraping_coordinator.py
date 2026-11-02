@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock
-from OSINTProject.src.scraping.scrapingCoordinator import ScrapingCoordinator
-from OSINTProject.src.api.models import SearchRequest
-from OSINTProject.src.scraping.discoveryEngine import DiscoveryEngine
-from OSINTProject.src.scraping.extractionEngine import ExtractionEngine
-from OSINTProject.src.core.session_manager import SessionManager
+from src.scraping.scrapingCoordinator import ScrapingCoordinator
+from src.api.models import SearchRequest
+from src.scraping.discoveryEngine import DiscoveryEngine
+from src.scraping.extractionEngine import ExtractionEngine
+from src.core.session_manager import SessionManager
 
 class TestScrapingCoordinator(unittest.IsolatedAsyncioTestCase):
 

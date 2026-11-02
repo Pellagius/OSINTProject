@@ -1,9 +1,9 @@
 import asyncio
 import logging
-from OSINTProject.src.api.models import SearchRequest
+from src.api.models import SearchRequest
 from typing import List, Dict
-from OSINTProject.src.scraping.discoveryEngine import DiscoveryEngine
-from OSINTProject.src.scraping.extractionEngine import ExtractionEngine
+from src.scraping.discoveryEngine import DiscoveryEngine
+from src.scraping.extractionEngine import ExtractionEngine
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -28,6 +28,7 @@ class ScrapingCoordinator:
             async with self._semaphore: # Respect the max concurrent limit (e.g., Playwright pages open at once)
                 try:
                     result = await self._extraction_engine.extract_detailed_data(item['url'])
+                    print(f"Extracted data for {item['url']}: {result}")
                     if result and 'raw_content' in result:  # Only add if extraction was successful
                         return result
                 except Exception as e:

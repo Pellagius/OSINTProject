@@ -1,7 +1,7 @@
 import json
 import logging
 from typing import Dict, Any
-from OSINTProject.src.core.config import settings
+from src.core.config import settings
 import requests
 
 # Configure logging

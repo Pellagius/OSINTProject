@@ -1,9 +1,12 @@
 import asyncio
-from OSINTProject.src.core.session_manager import SessionManager
-from OSINTProject.src.scraping.discoveryEngine import DiscoveryEngine
-from OSINTProject.src.scraping.extractionEngine import ExtractionEngine
-from OSINTProject.src.scraping.scrapingCoordinator import ScrapingCoordinator
-from OSINTProject.src.scraping.twitterScraper import TwitterScraper
+import logging
+from src.core.session_manager import SessionManager
+from src.scraping.discoveryEngine import DiscoveryEngine
+from src.scraping.extractionEngine import ExtractionEngine
+from src.scraping.scrapingCoordinator import ScrapingCoordinator
+from src.scraping.twitterScraper import TwitterScraper
+
+logger = logging.getLogger(__name__)
 
 class DependencyGraph:
     def __init__(self):
@@ -14,11 +17,11 @@ class DependencyGraph:
         self._twitter_scraper = None
 
     async def initialize(self):
-        self._session_manager = SessionManager()
+        self_session_manager = SessionManager()
+        await self_session_manager.__aenter__()
         self._twitter_scraper = TwitterScraper()
-        await self._session_manager.start()
-        self._discovery_engine = DiscoveryEngine(self._session_manager, self._twitter_scraper)
-        self._extraction_engine = ExtractionEngine(self._session_manager)
+        self._discovery_engine = DiscoveryEngine(self_session_manager, self._twitter_scraper)
+        self._extraction_engine = ExtractionEngine( self_session_manager)
         self._scraping_coordinator = ScrapingCoordinator(self._discovery_engine, self._extraction_engine)
         
     def get_coordinator(self):

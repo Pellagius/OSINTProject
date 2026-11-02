@@ -6,17 +6,14 @@ class TwitterScraper:
         pass
 
     def generate_social_media_variants(self, term: str) -> list[str]:
-        print("GENERATE SOCIAL MEDIA VARIANTS CALLED")
         if not term or len(term) < 2:
-            print("SEARCH TERM LESS THAN 2 OR NO SEARCH TERM")
             return []
-        print("SEARCH TERM LONGER THAN 2")
+
         # Basic cleaning and variations for Twitter/X handle logic
         base_clean = "".join(c for c in term if c.isalnum()).lower() # e.g., "Joe Bloggs" -> "joebloggs"
         underscore_variant = term.replace(" ", "_").replace("-", "_").lower()  # e.g., "Joe Bloggs" -> "joe_bloggs"
        
         potential_urls = set()
-        print(f"BASE CLEAN: { base_clean }")
         if base_clean: 
             potential_urls.add(f"https://twitter.com/{base_clean}")
         if underscore_variant and underscore_variant != base_clean: 
