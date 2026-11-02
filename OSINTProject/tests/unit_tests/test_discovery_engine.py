@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
-from OSINTProject.src.scraping.discoveryEngine import DiscoveryEngine
-from OSINTProject.src.api.models import SearchRequest
-from OSINTProject.src.core.session_manager import SessionManager
-from OSINTProject.src.scraping.twitterScraper import TwitterScraper
+from src.scraping.discoveryEngine import DiscoveryEngine
+from src.api.models import SearchRequest
+from src.core.session_manager import SessionManager
+from src.scraping.twitterScraper import TwitterScraper
 
 class TestScrapingEngine(unittest.IsolatedAsyncioTestCase):
 
@@ -19,11 +19,10 @@ class TestScrapingEngine(unittest.IsolatedAsyncioTestCase):
         
         # Mock _filter_high_value to return only high-value results
         # Assuming high-value results are those with "social" as source_type
-        with patch('OSINTProject.src.utils.filters.filter_high_value') as mock_filter_high_value:
+        with patch('src.scraping.discoveryEngine.filter_high_value') as mock_filter_high_value:
             mock_filter_high_value.return_value = [
                 {"url": "http://social.com", "source_type": "social"}
             ]
-
             results = await engine.discover_sources(request)
             self.assertEqual(len(results), 1)
             self.assertEqual(results[0]["url"], "http://social.com")
@@ -34,7 +33,7 @@ class TestScrapingEngine(unittest.IsolatedAsyncioTestCase):
         engine._perform_multi_platform_search = AsyncMock(return_value=[])
         
         # Mock _filter_high_value to return an empty list
-        with patch('OSINTProject.src.utils.filters.filter_high_value') as mock_filter_high_value:
+        with patch('src.scraping.discoveryEngine.filter_high_value') as mock_filter_high_value:
             mock_filter_high_value.return_value = []
 
             results = await engine.discover_sources(request)
@@ -49,7 +48,7 @@ class TestScrapingEngine(unittest.IsolatedAsyncioTestCase):
         ])
         
         # Mock _filter_high_value to return only high-value results
-        with patch('OSINTProject.src.utils.filters.filter_high_value') as mock_filter_high_value:
+        with patch('src.scraping.discoveryEngine.filter_high_value') as mock_filter_high_value:
             mock_filter_high_value.return_value = [
                 {"url": "http://social.com", "source_type": "social"}
             ]

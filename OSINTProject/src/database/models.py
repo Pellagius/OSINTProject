@@ -19,7 +19,7 @@ class Subject(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     type = Column(String)  # e.g., "Person", "Organization"
-    metadata = Column(JSON, nullable=True)  # For any extra details about the subject
+    extraData = Column(JSON, nullable=True)  # For any extra details about the subject
 
     reports = relationship("Report", back_populates="subject")
 

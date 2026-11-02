@@ -1,8 +1,8 @@
 import logging
-from OSINTProject.src.api.models import SearchRequest
-from OSINTProject.src.scraping.twitterScraper import TwitterScraper
-from OSINTProject.src.core.session_manager import SessionManager
-from OSINTProject.src.utils import filters
+from src.api.models import SearchRequest
+from src.scraping.twitterScraper import TwitterScraper
+from src.core.session_manager import SessionManager
+from src.utils.filters import filter_high_value
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -19,7 +19,8 @@ class DiscoveryEngine:
         results.extend(findings)
 
         # Deduplicate and filter high-value targets
-        results = filters.filter_high_value(results)
+        results = filter_high_value(results)
+        
         unique_results = {res['url']: res for res in results if 'url' in res}.values()
         return list(unique_results) 
 
@@ -42,12 +43,12 @@ class DiscoveryEngine:
         results = []
         try:
             raw_links = await self._fetch_serp_data(term) 
-
+            logger.info("SERP Fetch complete.")
             for link in raw_links:
                 if "sponsored" not in link['title'].lower() and "ad" not in link['url'].lower():
                     results.append({
                         "url": link["url"],
-			"source_type": "web",
+			            "source_type": "web",
                         "confidence_score": 1.0  # Preliminary score before detailed analysis/me    ing by LLM logic
                     })
         except Exception as e:
@@ -56,9 +57,13 @@ class DiscoveryEngine:
         return list({res['url']: res for res in results if 'url' in res}.values())
 
     async def _fetch_serp_data(self, term: str) -> list[dict]:
-        logger.info(f"Fetching SERP data for term: {term}")
-        page = await self._session_manager.get_new_page()
+        logger.info(f"Fetching SERP context for: {term}")
+        
+        context = await self._session_manager.get_new_context()
+        page = await context.new_page()
         try:
+            logger.info(f"Fetching SERP data for: {term}")
+            print(f"search url: https://www.google.com/search?q={term}")
             await page.goto(f"https://www.google.com/search?q={term}")
             
             await page.wait_for_selector("div.g")

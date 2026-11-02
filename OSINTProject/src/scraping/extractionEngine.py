@@ -1,6 +1,6 @@
 import logging
-from OSINTProject.src.utils import filters
-from OSINTProject.src.core.session_manager import SessionManager
+from src.utils import filters
+from src.core.session_manager import SessionManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,10 +14,12 @@ class ExtractionEngine:
             logger.error("No Playwright context available for fetch_page_content")
             return ""
 
-        page = await self.session_manager.get_new_context()
+        context = await self.session_manager.get_new_context()
+        page = await context.new_page()
 
         try:
             content = await page.inner_text("body")
+            print(f"Fetched content from {url}: {content[:100]}...")  
             return filters.clean_html(content)
         except Exception as e:
             logger.error(f"Failed to fetch content from {url}: {e}")

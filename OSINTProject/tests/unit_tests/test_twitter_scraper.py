@@ -1,5 +1,5 @@
 import unittest
-from OSINTProject.src.scraping.twitterScraper import TwitterScraper
+from src.scraping.twitterScraper import TwitterScraper
 
 class TestTwitterScraper(unittest.TestCase):
 

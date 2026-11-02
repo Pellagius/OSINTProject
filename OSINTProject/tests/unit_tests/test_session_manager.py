@@ -1,22 +1,21 @@
-import asyncio
 import unittest
-from unittest.mock import AsyncMock, patch
-from OSINTProject.src.core.session_manager import SessionManager
+from unittest.mock import AsyncMock, MagicMock, patch
+from src.core.session_manager import SessionManager
 from playwright.async_api import Browser, BrowserContext
 
 class TestSessionManager(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_new_context(self):
-        """Test that get_new_context returns a context and appends it to the list."""
-        # We manually create mocks for the internal structure since we are testing logic of SessionManager 100% isolated.
+        # 1. Use AsyncMock for async methods, MagicMock for sync properties/methods like is_connected
         mock_browser = AsyncMock()
+        mock_browser.is_connected = MagicMock(return_value=True)
+
         ctx_mock = AsyncMock(spec=BrowserContext)
+        mock_browser.new_context.return_value = ctx_mock
 
         sm = SessionManager()
-        # Manually inject browser to bypass __aenter__ for this specific unit test logic
-        mock_browser.new_context.return_value = ctx_mock
-        sm.browser = mock_browser 
-        
+        sm._browser = mock_browser 
+
         # Act
         context = await sm.get_new_context()
 
@@ -42,9 +41,8 @@ class TestSessionManager(unittest.IsolatedAsyncioTestCase):
         ctx2.close.assert_awaited_once()
         self.assertEqual(len(sm._contexts), 0)
 
-    @patch('OSINTProject.src.core.session_manager.async_playwright')
+    @patch('src.core.session_manager.async_playwright')
     async def test_context_manager__aenter__(self, mock_pw):
-        """Test the __aenter__ logic specifically handles Playwright startup."""
         # 1. Mock the lowest level entity (the browser launcher)
         sm = SessionManager()
         mock_browser = AsyncMock()
@@ -66,10 +64,8 @@ class TestSessionManager(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(instance, sm)
 
             # Verify that all properties were populated successfully during initialization
-            print(f"SMS INSTANCE: { instance._playwright_context }")
-            print(f"TESTS INSTANCE: { mock_launcher } ")
             self.assertEqual(instance._playwright_context, mock_playwright_instance)
-            self.assertEqual(instance.browser, mock_browser)
+            self.assertEqual(instance._browser, mock_browser)
 
         # Verify underlying tracking parameters were called correctly
         mock_launcher.start.assert_awaited_once()
@@ -77,12 +73,11 @@ class TestSessionManager(unittest.IsolatedAsyncioTestCase):
 
 
     async def test_context_manager_cleanup(self) -> None:
-        """Test that __aexit__ cleans up both browser and playwright context."""
         sm = SessionManager()
         mock_browser = AsyncMock()
         mock_py = AsyncMock() 
         # Mocking the internal state of your class as if it was fully initialized by __aenter__
-        sm.browser = mock_browser
+        sm._browser = mock_browser
         sm._playwright_context = mock_py
 
         # We call a custom logic or simulate what happens during 'async with' exit:
@@ -91,7 +86,7 @@ class TestSessionManager(unittest.IsolatedAsyncioTestCase):
         mock_browser.close.assert_awaited_once()
         mock_py.stop.assert_awaited_once()
 
-    @patch('OSINTProject.src.core.session_manager.async_playwright')
+    @patch('src.core.session_manager.async_playwright')
     async def test_context_manager__aenter__failure(self, mock_pw):
         """Test that if browser fails to launch during __aenter__, playwright is still stopped."""
        # 1. Mock the Playwright instance returned by .start()

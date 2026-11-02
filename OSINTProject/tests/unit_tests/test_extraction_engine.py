@@ -1,22 +1,21 @@
 import asyncio
 import unittest
 from unittest.mock import AsyncMock, MagicMock
-from OSINTProject.src.scraping.extractionEngine import ExtractionEngine
-from OSINTProject.src.core.session_manager import SessionManager
+from src.scraping.extractionEngine import ExtractionEngine
+from src.core.session_manager import SessionManager
 
 class TestExtractionEngine(unittest.IsolatedAsyncioTestCase):
 
     async def test_fetch_page_content(self):
-        session_manager = SessionManager()
+        session_manager = AsyncMock(spec=SessionManager)
         engine = ExtractionEngine(session_manager=session_manager)
-
         async_page_mock = AsyncMock()
         async_page_mock.inner_text = AsyncMock(return_value="<p>Test content</p>")
         async_page_mock.close = AsyncMock(return_value=None)
-        session_manager.get_new_context = AsyncMock(return_value=async_page_mock)
-
+        async_context_mock = AsyncMock()
+        async_context_mock.new_page = AsyncMock(return_value=async_page_mock)
+        session_manager.get_new_context = AsyncMock(return_value=async_context_mock)
         content = await engine.fetch_page_content("http://test.com")
-        
         self.assertEqual(content, "Test content")
 
     async def test_fetch_page_content_get_new_context_failure(self):

@@ -1,4 +1,3 @@
-from typing import List
 import re
 
 def clean_html_content(html: str) -> str:

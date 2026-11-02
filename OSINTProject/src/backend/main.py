@@ -1,19 +1,22 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from OSINTProject.src.core.config import settings
-from OSINTProject.src.services.burn_service import burn_subject_data
-from OSINTProject.src.services.analysis_service import analyzer
-from OSINTProject.src.core.dependencyGraph import DependencyGraph
-from OSINTProject.src.api.models import SearchRequest
-
-app = FastAPI(title="OSINT Intelligence System")
-
-dependency_graph = DependencyGraph()
-
-async def startup():
+from src.services.burn_service import burn_subject_data
+from src.services.analysis_service import analyzer
+from src.core.dependencyGraph import DependencyGraph
+from src.api.models import SearchRequest
+    
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Application is starting up...")
     await dependency_graph.initialize()
-
-async def shutdown():
+    
+    yield 
+    
+    print("Application is shutting down...")
     await dependency_graph.shutdown()
+
+app = FastAPI(title="OSINT Intelligence System", lifespan=lifespan)
+dependency_graph = DependencyGraph()
 
 @app.post("/search")
 async def search(request: SearchRequest):
@@ -24,16 +27,16 @@ async def search(request: SearchRequest):
 
     if not results:
         return {
-            "status": "success", 
-            "data": None 
+            "status": "success",
+            "data": None
         }
-    
+
     # Analyse
-    analysis = analyzer.process(results)
-    
+    analysis = analyzer.analyze_content(results)
+
     return {
         "status": "success",
-        "data": analysis  
+        "data": analysis
 
     }
 
@@ -43,7 +46,3 @@ async def burn_subject(subject_id: int):
     if success:
         return {"message": f"Successfully burned all data for subject {subject_id}"}
     return {"error": "Failed to burn data"}
-
-
-app.add_event_handler("startup", startup)
-app.add_event_handler("shutdown", shutdown)
